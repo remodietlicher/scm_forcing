@@ -1,0 +1,4 @@
+*.nc
+*.py~
+*.pyc
+.gitignore~
