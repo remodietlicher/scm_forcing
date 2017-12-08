@@ -293,8 +293,6 @@ def write_stdatm(filename):
 
     dt_ci = 20.e-5
     dq_ci = 15.e-9
-    # dt_ci = dt_ci*15
-    # dq_ci = dq_ci*15
     p_ci = [15000, 20000]
     dc = 5.
     ci_start = 3*60*60
