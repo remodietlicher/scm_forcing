@@ -414,7 +414,8 @@ def write_numerics(filename):
     ttot = np.max(time)
     
     # standard atmosphere
-    std_t = np.array([15, -56.5, -56.5, -44.5])+tmlt
+    # std_t = np.array([15, -56.5, -56.5, -44.5])+tmlt
+    std_t = np.array([15, -56.5, -56.5, -44.5])+tmlt-15
     std_p = np.array([101325, 22632, 5475, 868])
     r_spec = 287.058
     std_rho = std_p/(r_spec*std_t)
@@ -432,7 +433,7 @@ def write_numerics(filename):
 
     # injection relative humidity
     atm.add_rh_layer(p0, p1, 1.0)
-    atm.add_rhi_layer(868, 101325, 0.75)
+    atm.add_rh_layer(868, 101325, 0.5)
 
     atm.add_layer_segment(p0, p1, 0, ttot+1000, dqi, dqi, 'ddt_qi')
     atm.add_layer_segment(p0, p1, 0, ttot+1000, dqirim, dqirim, 'ddt_qirim')
