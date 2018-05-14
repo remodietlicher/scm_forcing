@@ -142,10 +142,12 @@ def get_parser():
     parser.add_argument('--deep', dest='deep', action='store_true', help='create the deep cloud forcing')
     parser.add_argument('--warm', dest='warm', action='store_true', help='create the warm rain cloud forcing')
     parser.add_argument('--numerics', dest='numerics', action='store_true', help='create the test case for numerics')
+    parser.add_argument('--infinite_cirrus', dest='infinite_cirrus', action='store_true', help='create the test case for infinite cirrus cloud generation')
     parser.set_defaults(deep=False)
     parser.set_defaults(std_atm=False)
     parser.set_defaults(warm=False)
     parser.set_defaults(numerics=False)
+    parser.set_defaults(infinite_cirrus=False)
 
     return parser   
 
@@ -154,7 +156,7 @@ def get_parser():
 
 
 def create_file(name, n_steps, delta_time):
-    print 'creating file using name=%s, n_steps=%i, delta_time=%.1f'%(name, n_steps, delta_time)
+    print('creating file using name=%s, n_steps=%i, delta_time=%.1f'%(name, n_steps, delta_time))
 
     outfile = Dataset(name, 'w')
     
@@ -167,7 +169,7 @@ def create_file(name, n_steps, delta_time):
     outfile.createDimension(u'ncl5', size=1)
     outfile.createDimension(u'ncl6', size=2)
 
-    for vname, atts in cessentials_2d.iteritems():
+    for vname, atts in cessentials_2d.items():
         var = outfile.createVariable(vname, float, ('time', 'nlev'))
         var[:] = 0
         var.setncatts(atts)
@@ -266,7 +268,7 @@ def add_omega(atm, p0, p1):
     atm.add_layer(p0, p1, domega, 'ddt_omega')
 
 def write_stdatm(filename):
-    print 'opening file %s...'%(filename)
+    print('opening file %s...'%(filename))
     data = Dataset(filename, 'a')
     time = data.variables['time'][:]
     ttot = np.max(time)
@@ -314,7 +316,7 @@ def write_stdatm(filename):
     # mixed-phase initial relative humidity
     atm.add_rh_layer(p_mxphase[0], p_mxphase[1], 0.8)
 
-    # set rh between clouds to 95% RH_i
+    # set rh between clouds to 80% RH_i
     atm.add_rhi_layer(p_ci[1], p_mxphase[0], 0.8)
 
     # cirrus initial relative humidity
@@ -344,7 +346,7 @@ def write_stdatm(filename):
     data.close()
 
 def write_deep(filename):
-    print 'opening file %s...'%(filename)
+    print('opening file %s...'%(filename))
     data = Dataset(filename, 'a')
     time = data.variables['time'][:]
     ttot = np.max(time)
@@ -368,7 +370,7 @@ def write_deep(filename):
     dt_mxphase = 7.e-5
     dq_mxphase1 = 2e-9
     dq_mxphase2 = 6e-9
-    p_mxphase = [40000, 80000]
+    p_mxphase = [15000, 80000]
     dm = 3.
 
     # mixed-phase initial relative humidity
@@ -388,7 +390,7 @@ def write_deep(filename):
     data.close()
 
 def write_warm(filename):
-    print 'opening file %s...'%(filename)
+    print('opening file %s...'%(filename))
     data = Dataset(filename, 'a')
     time = data.variables['time'][:]
     ttot = np.max(time)
@@ -408,7 +410,7 @@ def write_warm(filename):
     data.close()
 
 def write_numerics(filename):
-    print 'opening file %s...'%(filename)
+    print('opening file %s...'%(filename))
     data = Dataset(filename, 'a')
     time = data.variables['time'][:]
     ttot = np.max(time)
@@ -443,6 +445,38 @@ def write_numerics(filename):
     data.sync()
     data.close()
 
+def write_infinite_cirrus(filename):
+    print('opening file %s...'%(filename))
+    data = Dataset(filename, 'a')
+    time = data.variables['time'][:]
+    ttot = np.max(time)
+
+    # standard atmosphere
+    std_t = np.array([15, -56.5, -56.5, -44.5])+tmlt
+    std_p = np.array([101325, 22632, 5475, 868])
+    r_spec = 287.058
+    std_rho = std_p/(r_spec*std_t)
+    rh = np.array([0.6, 0.3, 0.3, 0.3])
+    atm = generic_atmosphere(data, std_p, std_t, rh)
+
+    # add aerosols
+    n_aero = 75e6
+    m_aero = 1e-9
+    # n_aero = 0
+    # m_aero = 0
+
+    dt_ci = 20.e-5
+    dq_ci = 1.e-9
+    p = [15000, 20000]
+
+    add_aerosols(atm, p[0], p[1], n_aero, m_aero, 0, 0)
+    atm.add_rhi_layer(p[0], p[1], 1.3)
+    atm.add_layer(p[0], p[1], dt_ci, 'ddt_t')
+    atm.add_layer(p[0], p[1], dq_ci, 'ddt_q')
+
+    data.sync()
+    data.close()
+
 def main():
     parser = get_parser()
     args = parser.parse_args()
@@ -459,6 +493,8 @@ def main():
         write_warm(args.filename)
     if(args.numerics):
         write_numerics(args.filename)
+    if(args.infinite_cirrus):
+        write_infinite_cirrus(args.filename)
 
 if __name__ == '__main__':
     main()
